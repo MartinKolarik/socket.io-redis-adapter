@@ -102,7 +102,7 @@ export function PUBSUB(redisClient: any, arg: string, channel: string) {
     return Promise.all(
       redisClient.nodes().map((node) => {
         return node
-          .send_command(["PUBSUB", arg, channel])
+          .send_command("PUBSUB", [arg, channel])
           .then(parseNumSubResponse);
       })
     ).then(sumValues);
