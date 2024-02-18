@@ -28,9 +28,17 @@ export interface ShardedRedisAdapterOptions {
    * - a lot of connected clients would mean a lot of subscription/unsubscription
    * - the Socket ID attribute is ephemeral
    *
+   * This can be changed by setting "dynamicPrivateChannels" to "true".
+   *
    * @default "dynamic"
    */
   subscriptionMode?: "static" | "dynamic";
+  /**
+   * Changes the behavior of dynamic subscription mode to create separate channels for private rooms as well.
+   *
+   * @default {false}
+   */
+  dynamicPrivateChannels?: boolean;
 }
 
 /**
@@ -67,6 +75,7 @@ class ShardedRedisAdapter extends ClusterAdapter {
       {
         channelPrefix: "socket.io",
         subscriptionMode: "dynamic",
+        dynamicPrivateChannels: false,
       },
       opts
     );
@@ -82,14 +91,14 @@ class ShardedRedisAdapter extends ClusterAdapter {
     if (this.opts.subscriptionMode === "dynamic") {
       this.on("create-room", (room) => {
         const isPublicRoom = !this.sids.has(room);
-        if (isPublicRoom) {
+        if (isPublicRoom || this.opts.dynamicPrivateChannels) {
           SSUBSCRIBE(this.subClient, this.dynamicChannel(room), handler);
         }
       });
 
       this.on("delete-room", (room) => {
         const isPublicRoom = !this.sids.has(room);
-        if (isPublicRoom) {
+        if (isPublicRoom || this.opts.dynamicPrivateChannels) {
           SUNSUBSCRIBE(this.subClient, this.dynamicChannel(room));
         }
       });
@@ -102,7 +111,7 @@ class ShardedRedisAdapter extends ClusterAdapter {
     if (this.opts.subscriptionMode === "dynamic") {
       this.rooms.forEach((_sids, room) => {
         const isPublicRoom = !this.sids.has(room);
-        if (isPublicRoom) {
+        if (isPublicRoom || this.opts.dynamicPrivateChannels) {
           channels.push(this.dynamicChannel(room));
         }
       });
@@ -129,7 +138,8 @@ class ShardedRedisAdapter extends ClusterAdapter {
       message.type === MessageType.BROADCAST &&
       message.data.requestId === undefined &&
       message.data.opts.rooms.length === 1 &&
-      !message.data.opts.flags.expectSingleResponse;
+      (this.opts.dynamicPrivateChannels ||
+        !message.data.opts.flags.expectSingleResponse);
     if (useDynamicChannel) {
       return this.dynamicChannel(message.data.opts.rooms[0]);
     } else {
