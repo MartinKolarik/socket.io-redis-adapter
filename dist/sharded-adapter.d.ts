@@ -22,9 +22,17 @@ export interface ShardedRedisAdapterOptions {
      * - a lot of connected clients would mean a lot of subscription/unsubscription
      * - the Socket ID attribute is ephemeral
      *
+     * This can be changed by setting "dynamicPrivateChannels" to "true".
+     *
      * @default "dynamic"
      */
     subscriptionMode?: "static" | "dynamic";
+    /**
+     * Changes the behavior of dynamic subscription mode to create separate channels for private rooms as well.
+     *
+     * @default {false}
+     */
+    dynamicPrivateChannels?: boolean;
 }
 /**
  * Create a new Adapter based on Redis sharded Pub/Sub introduced in Redis 7.0.
