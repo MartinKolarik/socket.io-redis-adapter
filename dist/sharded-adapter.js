@@ -74,7 +74,8 @@ class ShardedRedisAdapter extends cluster_adapter_1.ClusterAdapter {
         const useDynamicChannel = this.opts.subscriptionMode === "dynamic" &&
             message.type === cluster_adapter_1.MessageType.BROADCAST &&
             message.data.requestId === undefined &&
-            message.data.opts.rooms.length === 1;
+            message.data.opts.rooms.length === 1 &&
+            !message.data.opts.flags.expectSingleResponse;
         if (useDynamicChannel) {
             return this.dynamicChannel(message.data.opts.rooms[0]);
         }
